@@ -16,7 +16,8 @@ file_path = 'C:/coding/projects/parking/mediapipe-rec/mp_pre_stored_embeddings.p
 pre_stored_embeddings = torch.load(file_path)
 
 # Set the threshold
-threshold = 0.035
+threshold = 0.07
+
 
 # Function to calculate L1 distance between two embeddings
 def calculate_l1_distance(embedding1, embedding2):
@@ -34,10 +35,12 @@ def find_closest_image(embedding):
     return nearest_img, min_distance
 
 # Start capturing video from the webcam.
+
 cap = cv2.VideoCapture(0)
 
-# Initialize a queue to store the last five identification_text values
-text_queue = deque(maxlen=10)
+
+# Initialize a dictionary to store queues for each face detected
+face_queues = {}
 
 while cap.isOpened():
     success, image = cap.read()
@@ -48,7 +51,6 @@ while cap.isOpened():
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     results = face_detection.process(image)
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
 
     if results.detections:
         for detection in results.detections:
@@ -64,8 +66,9 @@ while cap.isOpened():
             h += 2 * y_margin
             x, y, w, h = max(x, 0), max(y, 0), min(w, iw-x), min(h, ih-y)
 
-            if w*h == 0:
+            if w * h == 0:
                 continue  # Skip this detection and continue with the next
+
             cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
             face_roi = image[y:y+h, x:x+w]
@@ -74,17 +77,24 @@ while cap.isOpened():
             img_embedding = resnet(face_tensor.unsqueeze(0))
 
             nearest_img, distance = find_closest_image(img_embedding)
-            confidence_score = max(0, (distance/threshold) * 100)
+            confidence_score = max(0, (distance / threshold) * 100)
 
             if distance < threshold:
-                confidence_score = max(0, (distance/threshold) * 100)
-                text_queue.append(nearest_img)  # Add the identification_text to the queue
+                identification_text = nearest_img
+                confidence_score = max(0, (distance / threshold) * 100)
             else:
-                text_queue.append('Unknown')  # Add 'Unknown' to the queue
+                identification_text = 'Unknown'
 
-            # Check if the last five frames had the same identification_text value
-            if len(set(text_queue)) == 1:
-                identification_text = f'{text_queue[0]} ({confidence_score})'
+            # Check if face ID exists in the dictionary, if not, create a new queue
+            if identification_text not in face_queues:
+                face_queues[identification_text] = deque(maxlen=10)
+
+            # Add the identification_text to the respective face queue
+            face_queues[identification_text].append(identification_text)
+
+            # Check if the last 10 frames for this face have the same identification_text
+            if len(set(face_queues[identification_text])) == 1:
+                identification_text = f'{identification_text} ({confidence_score})'
                 # Position the text above the bounding box
                 cv2.putText(image, identification_text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
