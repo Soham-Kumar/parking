@@ -18,9 +18,11 @@ resnet = InceptionResnetV1(pretrained='vggface2').eval()
 file_path = r'C:\coding\projects\parking\mediapipe-rec\small_pre_stored_embeddings.pt'
 pre_stored_embeddings = torch.load(file_path)
 
-# Set the threshold
+# Variables
 threshold = 0.03
+angle = 30
 
+# Initialize variables for identification
 identification_text = 'Unknown'
 confidence_score = "0.0"
 
@@ -106,7 +108,7 @@ while cap.isOpened():
                     angles, mtxR, mtxQ, Qx, Qy, Qz = cv2.RQDecomp3x3(rmat)
                     a, b, c = angles[0] * 360, angles[1] * 360, angles[2] * 360
 
-                    if not (-50 < a < 50 and -50 < b < 50):
+                    if not (-int(angle) < a < int(angle) and -int(angle) < b < int(angle)):
                         continue
 
                     resized_face = cv2.resize(face_roi, (160, 160))
