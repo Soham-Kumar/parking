@@ -19,9 +19,10 @@ file_path = r'C:\coding\projects\parking\mediapipe-rec\small_pre_stored_embeddin
 pre_stored_embeddings = torch.load(file_path)
 
 # Set the threshold
-threshold = 0.04
+threshold = 0.03
 
 identification_text = 'Unknown'
+confidence_score = "0.0"
 
 # Function to calculate L1 distance between two embeddings
 def calculate_l1_distance(embedding1, embedding2):
