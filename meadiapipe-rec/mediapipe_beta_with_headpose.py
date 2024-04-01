@@ -5,6 +5,7 @@ import torch
 from collections import deque
 from facenet_pytorch import InceptionResnetV1
 
+
 # Initialize MediaPipe Face Detection
 mp_face_detection = mp.solutions.face_detection
 face_detection = mp_face_detection.FaceDetection(min_detection_confidence=0.9)
@@ -19,8 +20,9 @@ file_path = r'C:\coding\projects\parking\mediapipe-rec\small_pre_stored_embeddin
 pre_stored_embeddings = torch.load(file_path)
 
 # Variables
-threshold = 0.03
+threshold = 0.035
 angle = 30
+queue_length = 600
 
 # Initialize variables for identification
 identification_text = 'Unknown'
@@ -40,6 +42,7 @@ def find_closest_image(embedding):
             min_distance = distance
             nearest_img = stored_img
     return nearest_img, min_distance
+    
 
 # Start capturing video from the webcam
 cap = cv2.VideoCapture(0)
@@ -124,7 +127,7 @@ while cap.isOpened():
                         identification_text = 'Unknown'
 
                     if identification_text not in face_queues:
-                        face_queues[identification_text] = deque(maxlen=10)
+                        face_queues[identification_text] = deque(maxlen=queue_length)
 
                     face_queues[identification_text].append(identification_text)
 
